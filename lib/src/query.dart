@@ -23,7 +23,7 @@ class AlgoliaQuery {
               'optionalFilters':
                   List<List<String>>.unmodifiable(<List<String>>[]),
               'numericFilters':
-                  List<List<String>>.unmodifiable(<List<String>>[]),
+                  List<List<dynamic>>.unmodifiable(<List<String>>[]),
               'tagFilters': List<List<String>>.unmodifiable(<List<String>>[]),
             }),
         assert(algolia != null),
@@ -328,14 +328,15 @@ class AlgoliaQuery {
   ///
   /// Source: [Learn more](https://www.algolia.com/doc/api-reference/api-parameters/numericFilters/)
   ///
-  AlgoliaQuery setNumericFilter(String value) {
-    final List<String> numericFilters =
-        List<String>.from(_parameters['numericFilters']);
-    assert(numericFilters.where((String item) => value == item).isEmpty,
+  AlgoliaQuery setNumericFilter(dynamic value) {
+    assert(value is String || value is List<String>,
+    'value must be either String | List<String> but was found `${value.runtimeType}`');
+    final List<dynamic> numericFilters =
+        List<dynamic>.from(_parameters['numericFilters']);
+    assert(numericFilters.where((dynamic item) => value == item).isEmpty,
         'NumericFilters $value already exists in this query');
     numericFilters.add(value);
-    return _copyWithParameters(
-        <String, dynamic>{'numericFilters': numericFilters});
+    return _copyWithParameters(<String, dynamic>{'numericFilters': numericFilters});
   }
 
   ///
