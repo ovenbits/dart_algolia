@@ -1,55 +1,46 @@
 part of algolia;
 
 class AlgoliaQuerySnapshot {
-  AlgoliaQuerySnapshot({
-    this.hits,
-    this.empty,
-    this.nbHits,
-    this.page,
-    this.nbPages,
-    this.hitsPerPage,
-    this.processingTimeMS,
-    this.exhaustiveNbHits,
-    this.params,
-    this.query,
-  });
+  AlgoliaQuerySnapshot._(this.algolia, this.index, Map<String, dynamic> map)
+      : _map = map,
+        hits = (map['hits'] as List<dynamic>? ?? [])
+            .map((dynamic o) {
+              var newMap = Map<String, dynamic>.from(o);
+              return AlgoliaObjectSnapshot._(algolia, index, newMap);
+            })
+            .toList()
+            .cast<AlgoliaObjectSnapshot>();
 
-  List<AlgoliaObjectSnapshot> hits;
-  Algolia algolia;
-  bool empty;
-  int nbHits;
-  int page;
-  int nbPages;
-  int hitsPerPage;
-  int processingTimeMS;
-  bool exhaustiveNbHits;
-  String query;
-  String params;
-  String index;
-  Map<String, dynamic> facets;
-  Map<String, dynamic> facetsStats;
+  final Algolia algolia;
+  final String index;
+  final Map<String, dynamic> _map;
+  final List<AlgoliaObjectSnapshot> hits;
 
-  AlgoliaQuerySnapshot.fromMap(algolia, index, Map<String, dynamic> map) {
-    this.algolia = algolia;
-    this.index = index;
-    List<AlgoliaObjectSnapshot> hitsReMap = (map['hits'] as List<dynamic>)
-        .map((dynamic o) {
-          Map<String, dynamic> newMap = Map<String, dynamic>.from(o);
-          return AlgoliaObjectSnapshot.fromMap(algolia, index, newMap);
-        })
-        .toList()
-        .cast<AlgoliaObjectSnapshot>();
-    this.hits = hitsReMap;
-    this.empty = this.hits.isEmpty;
-    this.nbHits = map['nbHits'];
-    this.page = map['page'];
-    this.nbPages = map['nbPages'];
-    this.hitsPerPage = map['hitsPerPage'];
-    this.processingTimeMS = map['processingTimeMS'];
-    this.exhaustiveNbHits = map['exhaustiveNbHits'];
-    this.query = map['query'];
-    this.params = map['params'];
-    this.facets = map['facets'] != null ? map['facets'] : {};
-    this.facetsStats = map['facets_stats'] != null ? map['facets_stats'] : {};
-  }
+  String get params => _map['params'];
+  String? get queryID => _map['queryID'];
+  String get query => _map['query'];
+
+  bool get empty => hits.isEmpty;
+  bool get hasHits => hits.isNotEmpty;
+
+  int get hitsPerPage => _map['hitsPerPage'] ?? 0;
+  int get length => _map['length'] ?? 0;
+  int get nbHits => _map['nbHits'] ?? 0;
+  int get nbPages => _map['nbPages'] ?? 0;
+  int get offset => _map['offset'] ?? 0;
+  int get page => _map['page'] ?? 0;
+
+  Map<String, dynamic> get facets => _map['facets'] ?? {};
+  Map<String, dynamic> get facetsStats => _map['facets_stats'] ?? {};
+
+  bool get exhaustiveNbHits => _map['exhaustiveNbHits'];
+  int get processingTimeMS => _map['processingTimeMS'] ?? 0;
+
+  Map<String, dynamic> toMap() => _map;
+
+  @Deprecated('Use `.raw()` instead.')
+  Map<String, dynamic> raw() => _map;
+
+  @override
+  String toString() => _map.toString();
 }

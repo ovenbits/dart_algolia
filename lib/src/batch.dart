@@ -39,16 +39,16 @@ class AlgoliaBatch {
   AlgoliaBatch._(
     this.algolia,
     String index, {
-    List<AlgoliaBatchRequest> actions,
+    List<AlgoliaBatchRequest>? actions,
   })  : _actions = actions ?? <AlgoliaBatchRequest>[],
         _index = index;
   Algolia algolia;
-  String _index;
+  final String _index;
 
   /// Indicator to whether or not this [AlgoliaBatch] has been committed.
   bool _committed = false;
 
-  List<AlgoliaBatchRequest> _actions;
+  final List<AlgoliaBatchRequest> _actions;
 
   ///
   /// **Commit**
@@ -60,22 +60,25 @@ class AlgoliaBatch {
     if (!_committed) {
       if (_actions.isNotEmpty) {
         _committed = true;
-        List<Map<String, dynamic>> actions =
-            _actions.map((a) => a.toMap()).toList();
-        Response response = await post(
-          Uri.parse('${algolia._host}indexes/$_index/batch'),
-          headers: algolia._header,
-          body: utf8.encode(json
-              .encode({'requests': actions}, toEncodable: jsonEncodeHelper)),
-          encoding: Encoding.getByName('utf-8'),
+        var actions = _actions.map((a) => a.toMap()).toList();
+
+        var response = await algolia._apiCall(
+          ApiRequestType.post,
+          'indexes/$_index/batch',
+          data: {'requests': actions},
         );
+
         Map<String, dynamic> body = json.decode(response.body);
+
+        if (!(response.statusCode >= 200 && response.statusCode < 300)) {
+          throw AlgoliaError._(body, response.statusCode);
+        }
         return AlgoliaTask._(algolia, _index, body);
       } else {
-        throw StateError("This batch has no actions to commit.");
+        throw StateError('This batch has no actions to commit.');
       }
     } else {
-      throw StateError("This batch has already been committed.");
+      throw StateError('This batch has already been committed.');
     }
   }
 
@@ -88,12 +91,10 @@ class AlgoliaBatch {
   ///
   void addObject(Map<String, dynamic> data) {
     if (!_committed) {
-      assert(data['objectID'] == null,
-          'In batch action [addObject] objectID field is not allowed, or use [updateObject].');
+      assert(data['objectID'] == null, 'In batch action [addObject] objectID field is not allowed, or use [updateObject].');
       _actions.add(AlgoliaBatchRequest(action: 'addObject', body: data));
     } else {
-      throw StateError(
-          "This batch has been committed and can no longer be changed.");
+      throw StateError('This batch has been committed and can no longer be changed.');
     }
   }
 
@@ -109,8 +110,7 @@ class AlgoliaBatch {
     if (!_committed) {
       _actions.add(AlgoliaBatchRequest(action: 'updateObject', body: data));
     } else {
-      throw StateError(
-          "This batch has been committed and can no longer be changed.");
+      throw StateError('This batch has been committed and can no longer be changed.');
     }
   }
 
@@ -125,13 +125,10 @@ class AlgoliaBatch {
   ///
   void partialUpdateObject(Map<String, dynamic> data) {
     if (!_committed) {
-      assert(_index != null && _index != '*' && _index != '',
-          'IndexName is required, but it has `*` multiple flag or `null`.');
-      _actions
-          .add(AlgoliaBatchRequest(action: 'partialUpdateObject', body: data));
+      assert(_index != '*' && _index != '', 'IndexName is required, but it has `*` multiple flag or `null`.');
+      _actions.add(AlgoliaBatchRequest(action: 'partialUpdateObject', body: data));
     } else {
-      throw StateError(
-          "This batch has been committed and can no longer be changed.");
+      throw StateError('This batch has been committed and can no longer be changed.');
     }
   }
 
@@ -145,15 +142,11 @@ class AlgoliaBatch {
   ///
   void partialUpdateObjectNoCreate(Map<String, dynamic> data) {
     if (!_committed) {
-      assert(_index != null && _index != '*' && _index != '',
-          'IndexName is required, but it has `*` multiple flag or `null`.');
-      assert(data['objectID'] != null,
-          'In batch action [partialUpdateObjectNoCreate] objectID field is required.');
-      _actions.add(AlgoliaBatchRequest(
-          action: 'partialUpdateObjectNoCreate', body: data));
+      assert(_index != '*' && _index != '', 'IndexName is required, but it has `*` multiple flag or `null`.');
+      assert(data['objectID'] != null, 'In batch action [partialUpdateObjectNoCreate] objectID field is required.');
+      _actions.add(AlgoliaBatchRequest(action: 'partialUpdateObjectNoCreate', body: data));
     } else {
-      throw StateError(
-          "This batch has been committed and can no longer be changed.");
+      throw StateError('This batch has been committed and can no longer be changed.');
     }
   }
 
@@ -169,8 +162,7 @@ class AlgoliaBatch {
         'objectID': objectID,
       }));
     } else {
-      throw StateError(
-          "This batch has been committed and can no longer be changed.");
+      throw StateError('This batch has been committed and can no longer be changed.');
     }
   }
 
@@ -183,8 +175,7 @@ class AlgoliaBatch {
     if (!_committed) {
       _actions.add(AlgoliaBatchRequest(action: 'delete', body: {}));
     } else {
-      throw StateError(
-          "This batch has been committed and can no longer be changed.");
+      throw StateError('This batch has been committed and can no longer be changed.');
     }
   }
 
@@ -198,8 +189,7 @@ class AlgoliaBatch {
     if (!_committed) {
       _actions.add(AlgoliaBatchRequest(action: 'clear', body: {}));
     } else {
-      throw StateError(
-          "This batch has been committed and can no longer be changed.");
+      throw StateError('This batch has been committed and can no longer be changed.');
     }
   }
 }
@@ -207,8 +197,8 @@ class AlgoliaBatch {
 /// Batch list element wrapper class [AlgoliaBatchRequest] for commit.
 class AlgoliaBatchRequest {
   AlgoliaBatchRequest({
-    @required this.action,
-    @required this.body,
+    required this.action,
+    required this.body,
   });
   String action;
   Map<String, dynamic> body;
